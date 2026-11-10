@@ -1,0 +1,29 @@
+// Performance regression stage for a Jenkins declarative pipeline.
+// Assumes JMeter is installed on the agent and tests/load_test.jmx exists.
+pipeline {
+  agent any
+  parameters {
+    string(name: 'P95_MS', defaultValue: '2000', description: 'Max p95 per transaction (ms)')
+    string(name: 'ERROR_PCT', defaultValue: '1.0', description: 'Max error rate (%)')
+  }
+  stages {
+    stage('Deploy to test env') {
+      steps { echo 'Deploy step goes here' }
+    }
+    stage('Performance test') {
+      steps {
+        sh 'jmeter -n -t tests/load_test.jmx -l results.jtl -e -o report'
+      }
+    }
+    stage('Performance gate') {
+      steps {
+        sh "python3 demos/cicd/check_thresholds.py results.jtl --p95 ${params.P95_MS} --error-rate ${params.ERROR_PCT}"
+      }
+    }
+  }
+  post {
+    always {
+      archiveArtifacts artifacts: 'results.jtl, report/**', allowEmptyArchive: true
+    }
+  }
+}

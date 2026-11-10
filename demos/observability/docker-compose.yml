@@ -1,0 +1,24 @@
+# Grafana + InfluxDB 1.x for live JMeter metrics (Backend Listener -> InfluxDB)
+services:
+  influxdb:
+    image: influxdb:1.8
+    ports:
+      - "8086:8086"
+    environment:
+      INFLUXDB_DB: jmeter
+    volumes:
+      - influx-data:/var/lib/influxdb
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    ports:
+      - "3000:3000"
+    depends_on:
+      - influxdb
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana-datasource.yml:/etc/grafana/provisioning/datasources/influx.yml:ro
+
+volumes:
+  influx-data:
+  grafana-data:
